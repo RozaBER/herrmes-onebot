@@ -358,7 +358,7 @@ export async function processInboundMessage(api: any, msg: OneBotMessage): Promi
 
                             if (isIncremental) {
                                 setForwardSuppressDelivery(false);
-                                // 增量发送时，若本次新增内容超阈值且启用了长消息策略，应对 chunksToSend 应用 og_image/forward
+                                // normal 模式下增量 chunk 已在 deliver 中实时发出；这里不能在 final 再补发一次。
                                 if (!shouldSendNow && isIncrementalLong && (longMessageMode === "og_image" || longMessageMode === "forward")) {
                                     const fullRaw = chunksToSend.map((c) => c.rawText ?? c.text ?? "").join("\n\n");
                                     if (fullRaw.trim()) {
@@ -412,7 +412,7 @@ export async function processInboundMessage(api: any, msg: OneBotMessage): Promi
                                             if (c.text || c.mediaUrl) await doSendChunk(effectiveIsGroup, effectiveGroupId, uid, c.text ?? "", c.mediaUrl);
                                         }
                                     }
-                                } else {
+                                } else if (!shouldSendNow) {
                                     for (const c of chunksToSend) {
                                         if (c.text || c.mediaUrl) await doSendChunk(effectiveIsGroup, effectiveGroupId, uid, c.text ?? "", c.mediaUrl);
                                     }
