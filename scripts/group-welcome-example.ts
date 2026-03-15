@@ -46,15 +46,27 @@ async function main() {
 </body>
 </html>`;
 
-  // 需安装 node-html-to-image：npm install node-html-to-image
-  const { default: nodeHtmlToImage } = await import("node-html-to-image");
+  // 需安装 puppeteer-core：npm install puppeteer-core
+  // 并确保系统已安装 Chromium/Chrome
+  const puppeteer = await import("puppeteer-core");
   const outPath = join(tmpdir(), `welcome-${userId}-${Date.now()}.png`);
-  await nodeHtmlToImage({
-    html,
-    output: outPath,
-    type: "png",
-    puppeteerArgs: { headless: true, args: ["--no-sandbox", "--disable-setuid-sandbox"] },
+  
+  const chromiumPath = process.env.PUPPETEER_EXECUTABLE_PATH || 
+    (process.platform === "darwin" 
+      ? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+      : "/usr/bin/chromium-browser");
+  
+  const browser = await puppeteer.launch({
+    executablePath: chromiumPath,
+    headless: true,
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
   });
+  
+  const page = await browser.newPage();
+  await page.setViewport({ width: 800, height: 400 });
+  await page.setContent(html, { waitUntil: "networkidle0" });
+  await page.screenshot({ path: outPath, type: "png" });
+  await browser.close();
 
   const result = {
     text: `欢迎 ${userName} 加入 ${groupName}！`,

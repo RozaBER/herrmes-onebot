@@ -75,7 +75,7 @@
         "type": "string",
         "enum": ["normal", "og_image", "forward"],
         "default": "normal",
-        "description": "长消息处理模式：normal 正常发送；og_image 生成图片（需 node-html-to-image）；forward 合并转发"
+        "description": "长消息处理模式：normal 正常发送；og_image 生成图片（需 puppeteer-core 和 Chromium）；forward 合并转发"
       },
       "longMessageThreshold": {
         "type": "number",

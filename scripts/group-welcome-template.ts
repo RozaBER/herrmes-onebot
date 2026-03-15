@@ -39,6 +39,6 @@ async function yourGenerateImage(ctx: {
   groupName: string;
 }): Promise<string> {
   // TODO: 替换为你的图片生成逻辑
-  // 例如：使用 canvas、sharp、node-html-to-image 等
+  // 例如：使用 canvas、sharp、puppeteer-core 等
   throw new Error("请实现 yourGenerateImage 函数");
 }

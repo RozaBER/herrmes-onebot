@@ -483,7 +483,7 @@ export async function processInboundMessage(api: any, msg: OneBotMessage): Promi
                                                     if (effectiveIsGroup && effectiveGroupId) await sendGroupImage(effectiveGroupId, imgUrl, api.logger, getConfig);
                                                     else if (uid) await sendPrivateImage(uid, imgUrl, api.logger, getConfig);
                                                 } else {
-                                                    api.logger?.warn?.("[onebot] og_image (incremental): node-html-to-image not installed, falling back to normal send");
+                                                    api.logger?.warn?.("[onebot] og_image (incremental): puppeteer-core not installed or Chromium not found, falling back to normal send");
                                                     for (const c of chunksToSend) {
                                                         if (c.text || c.mediaUrl) await doSendChunk(effectiveIsGroup, effectiveGroupId, uid, c.text ?? "", c.mediaUrl);
                                                     }
@@ -543,7 +543,7 @@ export async function processInboundMessage(api: any, msg: OneBotMessage): Promi
                                                 if (effectiveIsGroup && effectiveGroupId) await sendGroupImage(effectiveGroupId, imgUrl, api.logger, getConfig);
                                                 else if (uid) await sendPrivateImage(uid, imgUrl, api.logger, getConfig);
                                             } else {
-                                                api.logger?.warn?.("[onebot] og_image: node-html-to-image not installed, falling back to normal send");
+                                                api.logger?.warn?.("[onebot] og_image: puppeteer-core not installed or Chromium not found, falling back to normal send");
                                                 setForwardSuppressDelivery(false);
                                                 for (const c of deliveredChunks) {
                                                     if (c.text || c.mediaUrl) await doSendChunk(effectiveIsGroup, effectiveGroupId, uid, c.text ?? "", c.mediaUrl);

@@ -67,5 +67,5 @@
 | 模式 | 说明 |
 |------|------|
 | normal | 正常分段发送（默认） |
-| og_image | 将 Markdown 渲染为 HTML 并生成图片发送。需安装 `node-html-to-image`：`npm install node-html-to-image`。此模式下保留 Markdown 格式与代码高亮 |
+| og_image | 将 Markdown 渲染为 HTML 并生成图片发送。需安装 `puppeteer-core`：`npm install puppeteer-core`，并确保系统已安装 Chromium/Chrome（Ubuntu: `sudo apt install chromium-browser`，macOS: `brew install --cask chromium`）。此模式下保留 Markdown 格式与代码高亮 |
 | forward | 将各块消息先发给自己，再打包为合并转发发送。需 OneBot 实现支持 `send_group_forward_msg` / `send_private_forward_msg` |

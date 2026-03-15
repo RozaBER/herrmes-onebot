@@ -72,7 +72,7 @@ export async function runOneBotSetup(): Promise<void> {
       message: "长消息处理模式（单次回复超过阈值时）：",
       options: [
         { value: "normal", label: "正常发送（分段发送）" },
-        { value: "og_image", label: "生成图片发送（需安装 node-html-to-image）" },
+        { value: "og_image", label: "生成图片发送（需安装 puppeteer-core 和 Chromium）" },
         { value: "forward", label: "合并转发发送（发给自己后打包转发）" },
       ],
       initialValue: "normal",
