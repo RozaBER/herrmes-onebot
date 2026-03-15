@@ -1,98 +1,322 @@
 /**
  * Markdown 转 OG 图片
- * 依赖可选的 puppeteer-core（需安装：npm install puppeteer-core）
+ * 使用 Satori 将 HTML/CSS 转换为 SVG，再使用 Sharp 转换为 PNG
  * 
- * 兼容性说明：
- * - 支持 Ubuntu 24+、macOS、Windows
- * - 自动检测系统 Chromium/Chrome 路径
- * - 无需下载 Chromium，使用系统已安装的浏览器
+ * 优点：
+ * - 无需浏览器内核，轻量级
+ * - Serverless 友好
+ * - 启动速度快
  * 
- * 安装系统 Chromium（Ubuntu/Debian）：
- *   sudo apt update
- *   sudo apt install -y chromium-browser
- * 
- * 安装系统 Chromium（macOS）：
- *   brew install --cask chromium
- *   # 或直接使用系统 Chrome
+ * 限制：
+ * - 只支持部分 HTML/CSS 特性
+ * - 需要手动处理字体
  */
 
-import { unlinkSync, mkdirSync } from "fs";
-import { join } from "path";
+import { unlinkSync, mkdirSync, readFileSync } from "fs";
+import { join, dirname } from "path";
 import { tmpdir } from "os";
-import { markdownToHtml, getMarkdownStyles } from "./markdown-to-html.js";
-import type { Browser, Page } from "puppeteer-core";
+import { fileURLToPath } from "url";
+import satori from "satori";
+import sharp from "sharp";
 
 const OG_TEMP_DIR = join(tmpdir(), "openclaw-onebot-og");
 
+// 获取当前文件目录
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// 字体缓存
+let fontCache: Buffer | null = null;
+
 /**
- * 自动检测系统 Chromium/Chrome 可执行文件路径
+ * 加载默认字体
  */
-function detectChromiumPath(): string | undefined {
-  const platform = process.platform;
-  const envPath = process.env.PUPPETEER_EXECUTABLE_PATH || process.env.CHROME_PATH;
+async function loadDefaultFont(): Promise<Buffer> {
+  if (fontCache) return fontCache;
   
-  if (envPath) {
-    return envPath;
-  }
-
-  // 各平台常见路径
-  const paths: Record<string, string[]> = {
-    linux: [
-      "/usr/bin/chromium",
-      "/usr/bin/chromium-browser",
-      "/usr/bin/google-chrome",
-      "/usr/bin/google-chrome-stable",
-      "/snap/bin/chromium",
-      "/usr/lib/chromium/chromium",
-    ],
-    darwin: [
-      "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-      "/Applications/Chromium.app/Contents/MacOS/Chromium",
-      "/usr/bin/google-chrome",
-      "/opt/homebrew/bin/chromium",
-      "/usr/local/bin/chromium",
-    ],
-    win32: [
-      "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-      "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
-      "C:\\Program Files\\Chromium\\Application\\chromium.exe",
-    ],
-  };
-
-  const candidates = paths[platform] || [];
+  // 尝试加载系统字体（优先使用 .ttf，satori 不支持 .ttc 格式）
+  const systemFonts = [
+    // macOS - 优先使用 .ttf 格式
+    "/System/Library/Fonts/Supplemental/Arial Unicode.ttf",
+    "/Library/Fonts/Arial Unicode.ttf",
+    "/System/Library/Fonts/Geneva.ttf",
+    "/System/Library/Fonts/Monaco.ttf",
+    "/System/Library/Fonts/NewYork.ttf",
+    // Linux - 优先使用 .ttf 格式
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+    "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+    // Windows
+    "C:\\Windows\\Fonts\\arial.ttf",
+  ];
   
-  // 简单检查文件是否存在（同步检查）
-  for (const p of candidates) {
+  for (const fontPath of systemFonts) {
     try {
-      // 使用 fs.accessSync 检查文件是否可读
-      const { accessSync, constants } = require("fs");
-      accessSync(p, constants.X_OK);
-      return p;
+      const buffer = readFileSync(fontPath);
+      fontCache = buffer;
+      return buffer;
     } catch {
       continue;
     }
   }
-
-  return undefined;
+  
+  // 如果都找不到，抛出错误
+  throw new Error("无法找到系统字体，请安装中文字体（如文泉驿微米黑）");
 }
 
 /**
- * 动态导入 puppeteer-core
+ * 简单的 Markdown 到 Satori JSX 的转换
+ * Satori 只支持有限的 HTML 子集
  */
-async function loadPuppeteer() {
-  try {
-    const mod = await import("puppeteer-core");
-    return mod;
-  } catch {
-    return null;
+function markdownToSatoriElements(md: string): any {
+  const lines = md.split("\n");
+  const elements: any[] = [];
+  
+  let inCodeBlock = false;
+  let codeBlockContent = "";
+  let codeBlockLang = "";
+  
+  for (const line of lines) {
+    // 代码块处理
+    if (line.startsWith("```")) {
+      if (inCodeBlock) {
+        // 结束代码块
+        elements.push({
+          type: "div",
+          props: {
+            style: {
+              backgroundColor: "#f6f8fa",
+              padding: "12px",
+              borderRadius: "6px",
+              fontFamily: "monospace",
+              fontSize: "14px",
+              whiteSpace: "pre-wrap",
+              wordBreak: "break-all",
+              marginBottom: "12px",
+              color: "#24292e",
+            },
+            children: codeBlockContent.trim(),
+          },
+        });
+        codeBlockContent = "";
+        codeBlockLang = "";
+        inCodeBlock = false;
+      } else {
+        // 开始代码块
+        inCodeBlock = true;
+        codeBlockLang = line.slice(3).trim();
+      }
+      continue;
+    }
+    
+    if (inCodeBlock) {
+      codeBlockContent += line + "\n";
+      continue;
+    }
+    
+    // 标题处理
+    if (line.startsWith("# ")) {
+      elements.push({
+        type: "h1",
+        props: {
+          style: {
+            fontSize: "24px",
+            fontWeight: "bold",
+            marginBottom: "12px",
+            color: "#1a1a1a",
+          },
+          children: line.slice(2),
+        },
+      });
+      continue;
+    }
+    
+    if (line.startsWith("## ")) {
+      elements.push({
+        type: "h2",
+        props: {
+          style: {
+            fontSize: "20px",
+            fontWeight: "bold",
+            marginTop: "16px",
+            marginBottom: "8px",
+            color: "#1a1a1a",
+          },
+          children: line.slice(3),
+        },
+      });
+      continue;
+    }
+    
+    if (line.startsWith("### ")) {
+      elements.push({
+        type: "h3",
+        props: {
+          style: {
+            fontSize: "18px",
+            fontWeight: "bold",
+            marginTop: "12px",
+            marginBottom: "6px",
+            color: "#1a1a1a",
+          },
+          children: line.slice(4),
+        },
+      });
+      continue;
+    }
+    
+    // 列表项
+    if (line.startsWith("- ") || line.startsWith("* ")) {
+      elements.push({
+        type: "div",
+        props: {
+          style: {
+            display: "flex",
+            marginBottom: "4px",
+            fontSize: "14px",
+          },
+          children: `• ${line.slice(2)}`,
+        },
+      });
+      continue;
+    }
+    
+    // 引用块
+    if (line.startsWith("> ")) {
+      elements.push({
+        type: "div",
+        props: {
+          style: {
+            display: "flex",
+            borderLeft: "4px solid #ddd",
+            paddingLeft: "12px",
+            marginBottom: "12px",
+            color: "#666",
+            fontStyle: "italic",
+          },
+          children: line.slice(2),
+        },
+      });
+      continue;
+    }
+    
+    // 空行
+    if (line.trim() === "") {
+      elements.push({
+        type: "div",
+        props: {
+          style: { height: "8px" },
+          children: null,
+        },
+      });
+      continue;
+    }
+    
+    // 普通段落
+    elements.push({
+      type: "div",
+      props: {
+        style: {
+          display: "flex",
+          fontSize: "14px",
+          lineHeight: "1.6",
+          marginBottom: "8px",
+          color: "#333",
+        },
+        children: line,
+      },
+    });
   }
+  
+  return elements;
+}
+
+/**
+ * 解析行内样式（粗体、斜体、代码）
+ */
+function parseInlineStyles(text: string): any[] {
+  const parts: any[] = [];
+  let current = "";
+  let i = 0;
+  
+  while (i < text.length) {
+    // 粗体 **text**
+    if (text.slice(i, i + 2) === "**" && text.indexOf("**", i + 2) !== -1) {
+      if (current) {
+        parts.push(current);
+        current = "";
+      }
+      const endIdx = text.indexOf("**", i + 2);
+      parts.push({
+        type: "span",
+        props: {
+          style: { fontWeight: "bold" },
+          children: text.slice(i + 2, endIdx),
+        },
+      });
+      i = endIdx + 2;
+      continue;
+    }
+    
+    // 斜体 *text* 或 _text_
+    if ((text[i] === "*" || text[i] === "_") && text.indexOf(text[i], i + 1) !== -1) {
+      const char = text[i];
+      const endIdx = text.indexOf(char, i + 1);
+      if (endIdx !== -1 && endIdx > i + 1) {
+        if (current) {
+          parts.push(current);
+          current = "";
+        }
+        parts.push({
+          type: "span",
+          props: {
+            style: { fontStyle: "italic" },
+            children: text.slice(i + 1, endIdx),
+          },
+        });
+        i = endIdx + 1;
+        continue;
+      }
+    }
+    
+    // 行内代码 `code`
+    if (text[i] === "`" && text.indexOf("`", i + 1) !== -1) {
+      const endIdx = text.indexOf("`", i + 1);
+      if (current) {
+        parts.push(current);
+        current = "";
+      }
+      parts.push({
+        type: "code",
+        props: {
+          style: {
+            backgroundColor: "#f0f0f0",
+            padding: "2px 4px",
+            borderRadius: "3px",
+            fontFamily: "monospace",
+            fontSize: "12px",
+          },
+          children: text.slice(i + 1, endIdx),
+        },
+      });
+      i = endIdx + 1;
+      continue;
+    }
+    
+    current += text[i];
+    i++;
+  }
+  
+  if (current) {
+    parts.push(current);
+  }
+  
+  return parts.length === 1 && typeof parts[0] === "string" ? [text] : parts;
 }
 
 export interface MarkdownToImageOptions {
   theme?: string;
   width?: number;
   height?: number;
-  fullPage?: boolean;
 }
 
 export async function markdownToImage(
@@ -100,90 +324,56 @@ export async function markdownToImage(
   opts?: MarkdownToImageOptions
 ): Promise<string | null> {
   if (!md?.trim()) return null;
-
-  const puppeteer = await loadPuppeteer();
-  if (!puppeteer) {
-    return null;
-  }
-
-  const chromiumPath = detectChromiumPath();
-  if (!chromiumPath) {
-    console.warn("[onebot] 未找到系统 Chromium/Chrome，请安装或设置 PUPPETEER_EXECUTABLE_PATH 环境变量");
-    console.warn("[onebot] Ubuntu/Debian: sudo apt install chromium-browser");
-    console.warn("[onebot] macOS: brew install --cask chromium");
-    return null;
-  }
-
-  const bodyHtml = markdownToHtml(md);
-  const styles = getMarkdownStyles(opts?.theme);
-  const theme = (opts?.theme || "").trim();
-  const wrappedBody = theme === "dust" ? `<div class="markdown">${bodyHtml}</div>` : bodyHtml;
-  const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8">${styles}</head><body>${wrappedBody}</body></html>`;
-
-  mkdirSync(OG_TEMP_DIR, { recursive: true });
-  const outPath = join(OG_TEMP_DIR, `og-${Date.now()}-${Math.random().toString(36).slice(2)}.png`);
-
-  let browser: Browser | undefined;
-
+  
   try {
-    browser = await puppeteer.launch({
-      executablePath: chromiumPath,
-      headless: true,
-      args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage",
-        "--disable-gpu",
-        "--disable-software-rasterizer",
-        "--disable-extensions",
-        "--disable-background-networking",
-        "--disable-background-timer-throttling",
-        "--disable-backgrounding-occluded-windows",
-        "--disable-renderer-backgrounding",
+    // 加载字体
+    const fontData = await loadDefaultFont();
+    
+    // 转换 Markdown 为 Satori 元素
+    const elements = markdownToSatoriElements(md);
+    
+    // 创建容器
+    const container = {
+      type: "div",
+      props: {
+        style: {
+          display: "flex",
+          flexDirection: "column",
+          padding: 32,
+          backgroundColor: opts?.theme === "dust" ? "#faf8f5" : "#ffffff",
+          width: opts?.width || 800,
+          height: opts?.height || 600,
+        },
+        children: elements,
+      },
+    };
+    
+    // 使用 Satori 生成 SVG
+    const width = opts?.width || 800;
+    const svg = await satori(container, {
+      width,
+      height: opts?.height || 600,
+      fonts: [
+        {
+          name: "System",
+          data: fontData,
+          weight: 400,
+          style: "normal",
+        },
       ],
     });
-
-    const page: Page = await browser.newPage();
     
-    // 设置视口
-    await page.setViewport({
-      width: opts?.width || 800,
-      height: opts?.height || 600,
-      deviceScaleFactor: 2, // 高清截图
-    });
-
-    // 设置内容并等待渲染完成
-    await page.setContent(fullHtml, {
-      waitUntil: ["networkidle0", "domcontentloaded"],
-    });
-
-    // 等待字体和样式加载
-    await page.evaluate(() => document.fonts.ready);
-
-    // 截图
-    await page.screenshot({
-      path: outPath,
-      type: "png",
-      fullPage: opts?.fullPage !== false, // 默认全页截图
-    });
-
-    await browser.close();
-    browser = undefined;
-
+    // 使用 Sharp 将 SVG 转换为 PNG
+    mkdirSync(OG_TEMP_DIR, { recursive: true });
+    const outPath = join(OG_TEMP_DIR, `og-${Date.now()}-${Math.random().toString(36).slice(2)}.png`);
+    
+    await sharp(Buffer.from(svg))
+      .png({ quality: 90 })
+      .toFile(outPath);
+    
     return `file://${outPath.replace(/\\/g, "/")}`;
   } catch (e) {
-    // 清理浏览器资源
-    if (browser) {
-      try {
-        await browser.close();
-      } catch {
-        // 忽略关闭错误
-      }
-    }
-    // 清理临时文件
-    try {
-      unlinkSync(outPath);
-    } catch {}
-    throw e;
+    console.error("[onebot] Satori 图片生成失败:", e);
+    return null;
   }
 }

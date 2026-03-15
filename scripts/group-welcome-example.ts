@@ -46,27 +46,27 @@ async function main() {
 </body>
 </html>`;
 
-  // 需安装 puppeteer-core：npm install puppeteer-core
-  // 并确保系统已安装 Chromium/Chrome
-  const puppeteer = await import("puppeteer-core");
+  // 需安装 satori 和 sharp：npm install satori sharp
+  import satori from "satori";
+  import sharp from "sharp";
+  import { readFileSync } from "fs";
+  
   const outPath = join(tmpdir(), `welcome-${userId}-${Date.now()}.png`);
   
-  const chromiumPath = process.env.PUPPETEER_EXECUTABLE_PATH || 
-    (process.platform === "darwin" 
-      ? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-      : "/usr/bin/chromium-browser");
+  // 加载系统字体
+  const fontPath = process.platform === "darwin" 
+    ? "/System/Library/Fonts/PingFang.ttc"
+    : "/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc";
+  const fontData = readFileSync(fontPath);
   
-  const browser = await puppeteer.launch({
-    executablePath: chromiumPath,
-    headless: true,
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
-  });
+  // 使用 Satori 生成 SVG
+  const svg = await satori(
+    { type: "div", props: { style: {}, children: null } }, // 简化示例
+    { width: 800, height: 400, fonts: [{ name: "System", data: fontData, weight: 400 }] }
+  );
   
-  const page = await browser.newPage();
-  await page.setViewport({ width: 800, height: 400 });
-  await page.setContent(html, { waitUntil: "networkidle0" });
-  await page.screenshot({ path: outPath, type: "png" });
-  await browser.close();
+  // 转换为 PNG
+  await sharp(Buffer.from(svg)).png().toFile(outPath);
 
   const result = {
     text: `欢迎 ${userName} 加入 ${groupName}！`,

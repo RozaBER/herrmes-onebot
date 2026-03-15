@@ -75,7 +75,7 @@ openclaw onebot setup
 | 模式 | 说明 |
 |------|------|
 | `normal` | 准流式分段发送：边生成边聚合，按时间窗口或长度阈值增量发送 |
-| `og_image` | 将 Markdown 转为 HTML 再生成图片发送（需安装 `puppeteer-core` 和系统 Chromium/Chrome） |
+| `og_image` | 将 Markdown 转为 HTML 再生成图片发送（需安装 `satori` 和 `sharp`） |
 | `forward` | 合并转发（发给自己后打包转发） |
 
 `normal` 模式默认会开启块流式接收，并在插件侧做短时间聚合，默认规则：
@@ -227,7 +227,7 @@ npm run test:connect
 
 ### 测试 OG 图片渲染效果
 
-用于预览「Markdown 转图片」在不同主题下的渲染效果（需安装 `puppeteer-core` 和系统 Chromium/Chrome）：
+用于预览「Markdown 转图片」在不同主题下的渲染效果（需安装 `satori` 和 `sharp`）：
 
 ```bash
 cd openclaw-onebot

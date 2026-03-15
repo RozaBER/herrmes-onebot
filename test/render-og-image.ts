@@ -52,10 +52,7 @@ async function main(): Promise<void> {
 
   const outFileUrl = await markdownToImage(SAMPLE_MD, { theme });
   if (!outFileUrl) {
-    console.error("生成失败：请安装 puppeteer-core：npm install puppeteer-core");
-    console.error("并确保系统已安装 Chromium/Chrome：");
-    console.error("  Ubuntu/Debian: sudo apt install chromium-browser");
-    console.error("  macOS: brew install --cask chromium");
+    console.error("生成失败：请安装 satori 和 sharp：npm install satori sharp");
     process.exit(1);
   }
 
