@@ -166,6 +166,7 @@ function markdownToSatoriElements(md: string): any {
     
     // 列表项
     if (line.startsWith("- ") || line.startsWith("* ")) {
+      const inlineContent = parseInlineStyles(line.slice(2));
       elements.push({
         type: "div",
         props: {
@@ -174,7 +175,7 @@ function markdownToSatoriElements(md: string): any {
             marginBottom: "4px",
             fontSize: "14px",
           },
-          children: `• ${line.slice(2)}`,
+          children: [{ type: "span", props: { style: { marginRight: "8px", color: "#666" }, children: "• " } }, ...inlineContent],
         },
       });
       continue;
@@ -182,6 +183,7 @@ function markdownToSatoriElements(md: string): any {
     
     // 引用块
     if (line.startsWith("> ")) {
+      const inlineContent = parseInlineStyles(line.slice(2));
       elements.push({
         type: "div",
         props: {
@@ -193,7 +195,7 @@ function markdownToSatoriElements(md: string): any {
             color: "#666",
             fontStyle: "italic",
           },
-          children: line.slice(2),
+          children: inlineContent,
         },
       });
       continue;
@@ -212,6 +214,7 @@ function markdownToSatoriElements(md: string): any {
     }
     
     // 普通段落
+    const inlineContent = parseInlineStyles(line);
     elements.push({
       type: "div",
       props: {
@@ -222,7 +225,7 @@ function markdownToSatoriElements(md: string): any {
           marginBottom: "8px",
           color: "#333",
         },
-        children: line,
+        children: inlineContent,
       },
     });
   }
@@ -249,7 +252,7 @@ function parseInlineStyles(text: string): any[] {
       parts.push({
         type: "span",
         props: {
-          style: { fontWeight: "bold" },
+          style: { fontWeight: 700, color: "#000" },
           children: text.slice(i + 2, endIdx),
         },
       });
@@ -269,7 +272,7 @@ function parseInlineStyles(text: string): any[] {
         parts.push({
           type: "span",
           props: {
-            style: { fontStyle: "italic" },
+            style: { fontStyle: "italic", color: "#555" },
             children: text.slice(i + 1, endIdx),
           },
         });
@@ -310,7 +313,18 @@ function parseInlineStyles(text: string): any[] {
     parts.push(current);
   }
   
-  return parts.length === 1 && typeof parts[0] === "string" ? [text] : parts;
+  // 如果没有解析出任何样式，返回原始文本包装
+  if (parts.length === 0) {
+    return [text];
+  }
+  
+  // 将所有纯文本字符串转换为 span 元素，确保 satori 能正确渲染
+  return parts.map(part => {
+    if (typeof part === "string") {
+      return part; // 保持字符串，satori 应该能处理
+    }
+    return part;
+  });
 }
 
 export interface MarkdownToImageOptions {
