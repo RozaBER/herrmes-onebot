@@ -29,6 +29,11 @@
         "items": { "type": "number" },
         "description": "白名单 QQ 号，非空时仅白名单内用户可触发 AI；为空则所有人可回复"
       },
+      "blacklistUserIds": {
+        "type": "array",
+        "items": { "type": "number" },
+        "description": "黑名单 QQ 号，在黑名单内的用户无法触发 AI（优先级低于白名单）"
+      },
       "renderMarkdownToPlain": {
         "type": "boolean",
         "default": true,

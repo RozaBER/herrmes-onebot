@@ -130,6 +130,17 @@ export async function runOneBotSetup(): Promise<void> {
     })
   );
 
+  const blacklistInitial = Array.isArray(prevOnebot?.blacklistUserIds)
+    ? prevOnebot.blacklistUserIds.join(", ")
+    : "";
+
+  const blacklistInput = guardCancel(
+    await clackText({
+      message: "黑名单 QQ 号（逗号分隔，留空则不禁用任何人）",
+      initialValue: blacklistInitial,
+    })
+  );
+
   const port = parseInt(String(portStr).trim(), 10);
   if (!Number.isFinite(port)) {
     console.error("端口必须为数字");
@@ -139,6 +150,7 @@ export async function runOneBotSetup(): Promise<void> {
   const channels = existing.channels || {};
   const thresholdNum = parseInt(String(longMessageThreshold).trim(), 10);
   const whitelistIds = (String(whitelistInput).trim().split(/[,\s]+/).map((s) => s.trim()).filter(Boolean).map((s) => (/^\d+$/.test(s) ? Number(s) : null)).filter((n): n is number => n != null));
+  const blacklistIds = (String(blacklistInput).trim().split(/[,\s]+/).map((s) => s.trim()).filter(Boolean).map((s) => (/^\d+$/.test(s) ? Number(s) : null)).filter((n): n is number => n != null));
   channels.onebot = {
     ...(channels.onebot || {}),
     type,
@@ -152,6 +164,7 @@ export async function runOneBotSetup(): Promise<void> {
     ...(longMessageMode === "og_image" ? { ogImageRenderTheme, ...(ogImageRenderThemePath != null ? { ogImageRenderThemePath } : {}) } : {}),
     longMessageThreshold: Number.isFinite(thresholdNum) ? thresholdNum : 300,
     ...(whitelistIds.length > 0 ? { whitelistUserIds: whitelistIds } : {}),
+    ...(blacklistIds.length > 0 ? { blacklistUserIds: blacklistIds } : {}),
   };
 
   const next = { ...existing, channels };

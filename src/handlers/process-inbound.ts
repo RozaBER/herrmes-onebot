@@ -15,6 +15,7 @@ import {
     getRenderMarkdownToPlain,
     getCollapseDoubleNewlines,
     getWhitelistUserIds,
+    getBlacklistUserIds,
     getOgImageRenderTheme,
     getNormalModeFlushIntervalMs,
     getNormalModeFlushChars,
@@ -129,6 +130,8 @@ export async function processInboundMessage(api: any, msg: OneBotMessage): Promi
     }
 
     const userId = msg.user_id!;
+    
+    // 白名单检查
     const whitelist = getWhitelistUserIds(cfg);
     if (whitelist.length > 0 && !whitelist.includes(Number(userId))) {
         const denyMsg = "权限不足，请向管理员申请权限";
@@ -138,6 +141,13 @@ export async function processInboundMessage(api: any, msg: OneBotMessage): Promi
             else await sendPrivateMsg(userId, denyMsg, getConfig);
         } catch (_) {}
         api.logger?.info?.(`[onebot] user ${userId} not in whitelist, denied`);
+        return;
+    }
+    
+    // 黑名单检查
+    const blacklist = getBlacklistUserIds(cfg);
+    if (blacklist.length > 0 && blacklist.includes(Number(userId))) {
+        api.logger?.info?.(`[onebot] user ${userId} is in blacklist, ignored`);
         return;
     }
     const groupId = msg.group_id;

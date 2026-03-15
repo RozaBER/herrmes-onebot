@@ -94,6 +94,13 @@ export function getWhitelistUserIds(cfg: any): number[] {
   return v.filter((x: unknown) => typeof x === "number" || (typeof x === "string" && /^\d+$/.test(x))).map((x) => Number(x));
 }
 
+/** 黑名单 QQ 号列表，在黑名单内的用户无法触发 AI */
+export function getBlacklistUserIds(cfg: any): number[] {
+  const v = cfg?.channels?.onebot?.blacklistUserIds;
+  if (!Array.isArray(v)) return [];
+  return v.filter((x: unknown) => typeof x === "number" || (typeof x === "string" && /^\d+$/.test(x))).map((x) => Number(x));
+}
+
 /**
  * OG 图片渲染主题：枚举 default（无额外样式）、dust（内置）、custom（使用 ogImageRenderThemePath）
  * 返回用于 getMarkdownStyles 的值：default | dust | 自定义 CSS 绝对路径

@@ -184,11 +184,27 @@ openclaw message send --channel onebot --target group:987654321 --media "file://
 {
   "channels": {
     "onebot": {
-      "whitelistUserIds": [1193466151],
+      "whitelistUserIds": [1193466151]
     }
   }
 }
 ```
+
+### 黑名单
+
+在群里有时候有些人需要被屏蔽，不管他怎么 @ 还是怎么，都屏蔽他的消息不触发。
+
+```json
+{
+  "channels": {
+    "onebot": {
+      "blacklistUserIds": [123456789]
+    }
+  }
+}
+```
+
+注意：白名单优先级高于黑名单。如果同时设置了白名单和黑名单，只有白名单内的用户才能触发，且黑名单内的白名单用户也会被屏蔽。
 
 ## 新人入群触发器
 

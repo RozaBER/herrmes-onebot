@@ -11,6 +11,7 @@
 | path | 反向 WS 路径，默认 `/onebot/v11/ws` |
 | requireMention | 群聊是否需 @ 才回复，默认 `true` |
 | whitelistUserIds | 白名单 QQ 号数组，非空时仅白名单内用户可触发 AI；为空则所有人可回复 |
+| blacklistUserIds | 黑名单 QQ 号数组，在黑名单内的用户无法触发 AI（优先级低于白名单） |
 | renderMarkdownToPlain | 是否将 Markdown 转为纯文本再发送，默认 `true` |
 | collapseDoubleNewlines | 是否将连续多个换行压缩为单个，默认 `true`（减少 AI 输出的双空行） |
 | longMessageMode | 长消息模式：`normal` 正常发送、`og_image` 生成图片、`forward` 合并转发 |
