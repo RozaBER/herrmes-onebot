@@ -261,7 +261,7 @@ export async function waitForConnection(timeoutMs = 30000): Promise<WebSocket> {
         }),
         new Promise<never>((_, reject) =>
             setTimeout(
-                () => reject(new Error(`OneBot WebSocket not connected after ${timeoutMs}ms. Ensure "openclaw gateway run" is running and OneBot (Lagrange.Core) is connected.`)),
+                () => reject(new Error(`OneBot WebSocket not connected after ${timeoutMs}ms. Ensure "hermes gateway run" (or "openclaw gateway run") is running and OneBot (Lagrange.Core) is connected.`)),
                 timeoutMs
             )
         ),

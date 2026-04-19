@@ -1,6 +1,6 @@
 /**
  * Agent 工具注册
- * 供 OpenClaw cron 等场景下，AI 调用 OneBot 能力
+ * 供 Hermes/OpenClaw cron 等场景下，AI 调用 OneBot 能力
  */
 
 import WebSocket from "ws";

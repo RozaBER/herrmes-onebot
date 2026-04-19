@@ -1,7 +1,7 @@
 {
-  "name": "@kirigaya/openclaw-onebot",
+  "name": "@kirigaya/hermes-onebot",
   "version": "1.1.1",
-  "description": "OneBot v11 protocol channel plugin for OpenClaw (QQ/Lagrange.Core/go-cqhttp)",
+  "description": "OneBot v11 protocol channel plugin for Hermes/OpenClaw (QQ/Lagrange.Core/go-cqhttp)",
   "license": "MIT",
   "publishConfig": {
     "access": "public"
@@ -9,19 +9,20 @@
   "author": "LSTM-Kirigaya",
   "repository": {
     "type": "git",
-    "url": "https://github.com/LSTM-Kirigaya/openclaw-onebot.git"
+    "url": "https://github.com/LSTM-Kirigaya/herrmes-onebot.git"
   },
   "bugs": {
-    "url": "https://github.com/LSTM-Kirigaya/openclaw-onebot/issues"
+    "url": "https://github.com/LSTM-Kirigaya/herrmes-onebot/issues"
   },
-  "homepage": "https://github.com/LSTM-Kirigaya/openclaw-onebot#readme",
+  "homepage": "https://github.com/LSTM-Kirigaya/herrmes-onebot#readme",
   "keywords": [
-    "openclaw",
-    "onebot",
-    "qq",
-    "lagrange",
+    "chatbot",
     "cqhttp",
-    "chatbot"
+    "hermes",
+    "lagrange",
+    "onebot",
+    "openclaw",
+    "qq"
   ],
   "type": "module",
   "main": "./dist/index.js",
@@ -31,7 +32,8 @@
     "themes",
     "skills",
     "openclaw.plugin.json",
-    "README.md"
+    "README.md",
+    "hermes.plugin.json"
   ],
   "openclaw": {
     "extensions": [
@@ -63,7 +65,8 @@
     "test:group-increase-handler": "npx tsx scripts/test-group-increase-handler.ts",
     "test:render-og-image": "npx tsx test/render-og-image.ts",
     "prepublishOnly": "npm run build",
-    "pub": "npm run build && npm publish"
+    "pub": "npm run build && npm publish",
+    "hermes": "hermes"
   },
   "dependencies": {
     "@clack/prompts": "^1.0.0",
@@ -80,13 +83,17 @@
     "sharp": "^0.33.0"
   },
   "peerDependencies": {
-    "clawdbot": "*"
+    "clawdbot": "*",
+    "hermes": "*"
   },
   "peerDependenciesMeta": {
     "clawdbot": {
       "optional": true
     },
     "openclaw": {
+      "optional": true
+    },
+    "hermes": {
       "optional": true
     }
   },
@@ -97,5 +104,27 @@
   },
   "engines": {
     "node": ">=22"
+  },
+  "hermes": {
+    "extensions": [
+      "./dist/index.js"
+    ],
+    "skills": [
+      "skills/onebot-ops",
+      "skills/onebot-scripts"
+    ],
+    "channel": {
+      "id": "onebot",
+      "label": "OneBot",
+      "selectionLabel": "OneBot (QQ/Lagrange)",
+      "docsPath": "/channels/onebot",
+      "blurb": "OneBot v11 protocol via WebSocket (go-cqhttp, Lagrange.Core, etc.)",
+      "order": 85,
+      "aliases": [
+        "qq",
+        "lagrange",
+        "cqhttp"
+      ]
+    }
   }
 }
