@@ -1,6 +1,6 @@
 /**
  * OneBot TUI 配置向导
- * openclaw onebot setup
+ * hermes onebot setup / openclaw onebot setup
  */
 import {
   cancel as clackCancel,
@@ -16,8 +16,12 @@ import { existsSync, readFileSync, writeFileSync } from "fs";
 import { homedir } from "os";
 import { join } from "path";
 
+const HERMES_HOME = join(homedir(), ".hermes");
 const OPENCLAW_HOME = join(homedir(), ".openclaw");
-const CONFIG_PATH = join(OPENCLAW_HOME, "openclaw.json");
+const HERMES_CONFIG_PATH = join(HERMES_HOME, "hermes.json");
+const OPENCLAW_CONFIG_PATH = join(OPENCLAW_HOME, "openclaw.json");
+const CONFIG_PATH = existsSync(HERMES_CONFIG_PATH) ? HERMES_CONFIG_PATH : OPENCLAW_CONFIG_PATH;
+const GATEWAY_CLI = CONFIG_PATH.endsWith("hermes.json") ? "hermes" : "openclaw";
 
 function guardCancel<T>(v: T | symbol): T {
   if (isCancel(v)) {
@@ -171,5 +175,5 @@ export async function runOneBotSetup(): Promise<void> {
   writeFileSync(CONFIG_PATH, JSON.stringify(next, null, 2), "utf-8");
 
   clackNote(`配置已保存到 ${CONFIG_PATH}`, "完成");
-  clackOutro("运行 openclaw gateway restart 使配置生效");
+  clackOutro(`运行 ${GATEWAY_CLI} gateway restart 使配置生效`);
 }

@@ -20,7 +20,7 @@ async function ensureOneBotConnection(): Promise<void> {
   const api = getApi();
   const config = getOneBotConfig(api);
   if (!config) {
-    console.error("OneBot 未配置，请先运行 openclaw onebot setup 或配置 openclaw.json channels.onebot");
+    console.error("OneBot 未配置，请先运行 hermes onebot setup（或 openclaw onebot setup）并配置 hermes.json channels.onebot");
     process.exit(1);
   }
   await ensureConnection(() => getOneBotConfig(getApi()), 15000);

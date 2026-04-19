@@ -1,8 +1,8 @@
 <div align="center">
 
-# openclaw-onebot
+# hermes-onebot
 
-[OpenClaw](https://openclaw.ai)  的 **OneBot v11 协议**（QQ/Lagrange.Core、go-cqhttp 等）渠道插件。
+[Hermes](https://github.com/LSTM-Kirigaya/herrmes) / OpenClaw 的 **OneBot v11 协议**（QQ/Lagrange.Core、go-cqhttp 等）渠道插件。
 
 [![npm version](https://img.shields.io/npm/v/@kirigaya/openclaw-onebot?style=flat-square)](https://www.npmjs.com/package/@kirigaya/openclaw-onebot)
 [![GitHub stars](https://img.shields.io/github/stars/LSTM-Kirigaya/openclaw-onebot?style=flat-square)](https://github.com/LSTM-Kirigaya/openclaw-onebot)
@@ -17,9 +17,12 @@
 
 ## 安装
 
+> 兼容 OpenClaw CLI：将命令中的 `hermes` 替换为 `openclaw` 即可。
+
+
 ```bash
-openclaw plugins install @kirigaya/openclaw-onebot
-openclaw onebot setup
+hermes plugins install @kirigaya/hermes-onebot
+hermes onebot setup
 ```
 
 ## 教程
@@ -67,7 +70,7 @@ openclaw onebot setup
 ## 使用
 
 1. 安装并配置
-2. 重启 Gateway：`openclaw gateway restart`
+2. 重启 Gateway：`hermes gateway restart`
 3. 在 QQ 私聊或群聊中发消息（群聊需 @ 机器人，或配置关键字触发）
 
 ## 关键字触发回复
@@ -96,7 +99,7 @@ openclaw onebot setup
 
 ## 长消息处理与 OG 图片渲染
 
-当单次回复超过**长消息阈值**（默认 300 字）时，可选用三种模式（`openclaw onebot setup` 中配置）：
+当单次回复超过**长消息阈值**（默认 300 字）时，可选用三种模式（`hermes onebot setup` 中配置）：
 
 | 模式 | 说明 |
 |------|------|
@@ -109,7 +112,7 @@ openclaw onebot setup
 - `normalModeFlushIntervalMs`: `1200`
 - `normalModeFlushChars`: `160`
 
-也就是回复不会逐 token 刷屏，而是大约每 1.2 秒或累计到 160 字左右就发送一段。可在 `openclaw.json` 中手动调整：
+也就是回复不会逐 token 刷屏，而是大约每 1.2 秒或累计到 160 字左右就发送一段。可在 `hermes.json` 中手动调整：
 
 ```json
 {
@@ -136,7 +139,7 @@ openclaw onebot setup
 - `ogImageRenderTheme`：`"default"` | `"dust"` | `"custom"`
 - `ogImageRenderThemePath`：当为 `custom` 时必填，CSS 文件绝对路径
 
-示例（`openclaw.json`）：
+示例（`hermes.json`）：
 
 ```json
 {
@@ -166,14 +169,14 @@ openclaw onebot setup
 
 ## 主动发送消息
 
-通过 `openclaw message send` CLI（无需 Agent 工具）：
+通过 `hermes message send` CLI（无需 Agent 工具）：
 
 ```bash
 # 发送文本
-openclaw message send --channel onebot --target user:123456789 --message "你好"
+hermes message send --channel onebot --target user:123456789 --message "你好"
 
 # 发送图片
-openclaw message send --channel onebot --target group:987654321 --media "file:///path/to/image.png"
+hermes message send --channel onebot --target group:987654321 --media "file:///path/to/image.png"
 ```
 
 `--target` 格式：`user:QQ号` 或 `group:群号`。回复场景由 deliver 自动投递，Agent 输出 text/mediaUrl 即会送达。
@@ -182,7 +185,7 @@ openclaw message send --channel onebot --target group:987654321 --media "file://
 
 当有新成员加入群时，可根据其 ID 信息生成欢迎图片并发送。详见 [receive.md](skills/onebot-ops/receive.md#新成员入群欢迎)。
 
-1. 在 `openclaw.json` 中配置：
+1. 在 `hermes.json` 中配置：
 
 ```json
 {
@@ -198,7 +201,7 @@ openclaw message send --channel onebot --target group:987654321 --media "file://
 }
 ```
 
-2. `command` 在 `cwd` 下用系统 shell 执行，环境变量传入 `GROUP_ID`、`GROUP_NAME`、`USER_ID`、`USER_NAME`、`AVATAR_URL`。命令可调用 `openclaw message send` 自行发送，或向 stdout 输出 JSON 行供 handler 发送。
+2. `command` 在 `cwd` 下用系统 shell 执行，环境变量传入 `GROUP_ID`、`GROUP_NAME`、`USER_ID`、`USER_NAME`、`AVATAR_URL`。命令可调用 `hermes message send` 自行发送，或向 stdout 输出 JSON 行供 handler 发送。
 
 3. 测试：`npm run test:group-increase-handler`（DRY_RUN 模式，仅生成图片）
 
@@ -263,7 +266,7 @@ openclaw message send --channel onebot --target group:987654321 --media "file://
 项目内提供测试脚本（需 `.env` 或环境变量）：
 
 ```bash
-cd openclaw-onebot
+cd herrmes-onebot
 npm run test:connect
 ```
 
@@ -272,7 +275,7 @@ npm run test:connect
 用于预览「Markdown 转图片」在不同主题下的渲染效果（需安装 `satori` 和 `sharp`）：
 
 ```bash
-cd openclaw-onebot
+cd herrmes-onebot
 # 无额外样式
 npm run test:render-og-image -- default
 # 内置 dust 主题
